@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>愿望清单</title>
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --card: #fffdf9;
+      --text: #2b2926;
+      --muted: #7a7065;
+      --line: #e7dfd3;
+      --accent: #ca5a2e;
+      --accent-soft: #fce6dc;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 100% -10%, #fff6dc 0%, transparent 60%),
+        radial-gradient(900px 600px at -20% 120%, #ffe8df 0%, transparent 55%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .panel {
+      width: min(100%, 460px);
+      background: color-mix(in srgb, var(--card) 92%, #ffffff 8%);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 14px 36px rgba(41, 32, 20, 0.09);
+      overflow: hidden;
+    }
+
+    .head {
+      padding: 22px 20px 14px;
+      border-bottom: 1px dashed var(--line);
+      background: linear-gradient(135deg, #fff8ef 0%, #fffdfa 100%);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: 0.5px;
+    }
+
+    .sub {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .list {
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      overflow: hidden;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    details[open] {
+      border-color: #e8b39b;
+      box-shadow: 0 8px 20px rgba(202, 90, 46, 0.12);
+    }
+
+    summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .idx {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      flex: none;
+    }
+
+    .title {
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .arrow {
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid #9a8e81;
+      border-bottom: 2px solid #9a8e81;
+      transform: rotate(45deg);
+      transition: transform 0.2s ease;
+      margin-right: 4px;
+      flex: none;
+    }
+
+    details[open] .arrow {
+      transform: rotate(225deg);
+      margin-top: 4px;
+    }
+
+    .detail {
+      padding: 0 14px 14px 46px;
+      color: #463f38;
+      font-size: 15px;
+      line-height: 1.5;
+      animation: reveal 0.25s ease;
+    }
+
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        transform: translateY(-3px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .foot {
+      padding: 0 18px 16px;
+      font-size: 12px;
+      color: #8b7d6f;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <header class="head">
+      <h1>愿望清单</h1>
+      <p class="sub">共 7 个愿望，点击每一项查看详情</p>
+    </header>
+
+    <section class="list">
+      <details>
+        <summary>
+          <span class="left">
+            <span class="idx">1</span>
+            <span class="title">愿望 1</span>
+          </span>
+          <span class="arrow"></span>
+        </summary>
+        <div class="detail">屏幕挂灯</div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="left">
+            <span class="idx">2</span>
+            <span class="title">愿望 2</span>
+          </span>
+          <span class="arrow"></span>
+        </summary>
+        <div class="detail">无</div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="left">
+            <span class="idx">3</span>
+            <span class="title">愿望 3</span>
+          </span>
+          <span class="arrow"></span>
+        </summary>
+        <div class="detail">无</div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="left">
+            <span class="idx">4</span>
+            <span class="title">愿望 4</span>
+          </span>
+          <span class="arrow"></span>
+        </summary>
+        <div class="detail">无</div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="left">
+            <span class="idx">5</span>
+            <span class="title">愿望 5</span>
+          </span>
+          <span class="arrow"></span>
+        </summary>
+        <div class="detail">无</div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="left">
+            <span class="idx">6</span>
+            <span class="title">愿望 6</span>
+          </span>
+          <span class="arrow"></span>
+        </summary>
+        <div class="detail">无</div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="left">
+            <span class="idx">7</span>
+            <span class="title">愿望 7</span>
+          </span>
+          <span class="arrow"></span>
+        </summary>
+        <div class="detail">无</div>
+      </details>
+    </section>
+
+    <footer class="foot">微信里点开后可直接查看</footer>
+  </main>
+</body>
+</html>
