@@ -73,7 +73,6 @@
     }
 
     .icon-button:hover { background: var(--accent-soft); }
-    .icon-button.share { font-size: 20px; }
     .icon-button:disabled { cursor: default; opacity: .4; }
 
     .list { padding: 10px; display: grid; gap: 10px; }
@@ -146,8 +145,6 @@
 
     .wish-name { margin: 0; white-space: pre-wrap; }
     .wish-note { margin: 6px 0 0; color: var(--muted); font-size: 13px; white-space: pre-wrap; }
-    .wish-link { display: inline-block; margin-top: 7px; color: var(--accent); font-size: 13px; }
-
     .delete-button {
       width: 26px;
       height: 26px;
@@ -233,7 +230,6 @@
       <h1>愿望清单</h1>
       <div class="actions" id="actions">
         <button class="icon-button" id="addButton" type="button" aria-label="添加愿望" title="添加愿望" disabled>+</button>
-        <button class="icon-button share" id="shareButton" type="button" aria-label="分享清单" title="分享清单" disabled>↗</button>
       </div>
     </header>
     <section class="list" id="wishList" aria-label="愿望列表"></section>
@@ -243,7 +239,6 @@
     <header class="dialog-head"><h2>添加愿望</h2></header>
     <form class="dialog-form" id="wishForm">
       <input id="wishName" name="name" maxlength="120" placeholder="愿望名称" aria-label="愿望名称" required />
-      <input id="wishUrl" name="url" type="url" maxlength="1000" placeholder="商品链接" aria-label="商品链接" />
       <textarea id="wishNote" name="note" maxlength="1000" placeholder="备注" aria-label="备注"></textarea>
       <div class="dialog-actions">
         <button id="cancelButton" type="button">取消</button>
@@ -271,7 +266,6 @@
       const dialog = document.getElementById('wishDialog');
       const form = document.getElementById('wishForm');
       const addButton = document.getElementById('addButton');
-      const shareButton = document.getElementById('shareButton');
       const toast = document.getElementById('toast');
 
       if (!listId) {
@@ -295,7 +289,6 @@
 
       function updateControls() {
         addButton.disabled = readonly || !connected;
-        shareButton.disabled = !connected;
       }
 
       function render() {
@@ -336,15 +329,6 @@
             note.className = 'wish-note';
             note.textContent = wish.note;
             detail.append(note);
-          }
-          if (wish.url) {
-            const link = document.createElement('a');
-            link.className = 'wish-link';
-            link.href = wish.url;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.textContent = '查看链接';
-            detail.append(link);
           }
           if (!readonly) {
             const remove = document.createElement('button');
@@ -389,7 +373,7 @@
         const seedId = listRef.child('items').push().key;
         listRef.transaction(current => current || {
           items: {
-            [seedId]: { name: 'Yeelight Tube 屏幕挂灯', note: '', url: '', createdAt: Date.now() }
+            [seedId]: { name: 'Yeelight Tube 屏幕挂灯', note: '', createdAt: Date.now() }
           }
         }, error => {
           if (error) showToast('清单读取失败，请检查数据库权限');
@@ -420,30 +404,17 @@
         if (!connected || readonly) return;
         const name = document.getElementById('wishName').value.trim();
         const note = document.getElementById('wishNote').value.trim();
-        const url = document.getElementById('wishUrl').value.trim();
         if (!name) return;
         const saveButton = document.getElementById('saveButton');
         saveButton.disabled = true;
         try {
-          await listRef.child('items').push({ name, note, url, createdAt: Date.now() });
+          await listRef.child('items').push({ name, note, createdAt: Date.now() });
           dialog.close();
           form.reset();
         } catch (error) {
           showToast('保存失败，请检查网络或数据库权限');
         } finally {
           saveButton.disabled = false;
-        }
-      });
-
-      shareButton.addEventListener('click', async () => {
-        const shareUrl = new URL(location.href);
-        shareUrl.searchParams.set('id', listId);
-        shareUrl.searchParams.set('view', '1');
-        try {
-          await navigator.clipboard.writeText(shareUrl.toString());
-          showToast('分享链接已复制');
-        } catch (error) {
-          window.prompt('复制清单链接：', shareUrl.toString());
         }
       });
 
