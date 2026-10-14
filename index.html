@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="format-detection" content="telephone=no" />
   <title>愿望清单</title>
   <style>
@@ -33,6 +33,9 @@
       padding: 18px;
     }
 
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+
     .panel {
       width: min(100%, 460px);
       background: color-mix(in srgb, var(--card) 92%, #ffffff 8%);
@@ -43,29 +46,37 @@
     }
 
     .head {
-      padding: 22px 20px 14px;
+      min-height: 70px;
+      padding: 19px 20px 16px;
       border-bottom: 1px dashed var(--line);
       background: linear-gradient(135deg, #fff8ef 0%, #fffdfa 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 24px;
-      line-height: 1.2;
-      letter-spacing: 0.5px;
-    }
+    h1 { margin: 0; font-size: 24px; line-height: 1.2; letter-spacing: 0.5px; }
+    .actions { display: flex; align-items: center; gap: 5px; }
 
-    .sub {
-      margin: 8px 0 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .list {
-      padding: 10px;
+    .icon-button {
+      width: 36px;
+      height: 36px;
       display: grid;
-      gap: 10px;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      color: var(--accent);
+      background: transparent;
+      font-size: 24px;
+      line-height: 1;
     }
+
+    .icon-button:hover { background: var(--accent-soft); }
+    .icon-button.share { font-size: 20px; }
+    .icon-button:disabled { cursor: default; opacity: .4; }
+
+    .list { padding: 10px; display: grid; gap: 10px; }
 
     details {
       border: 1px solid var(--line);
@@ -83,7 +94,8 @@
     summary {
       list-style: none;
       cursor: pointer;
-      padding: 14px 14px;
+      min-height: 50px;
+      padding: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -92,77 +104,126 @@
       user-select: none;
     }
 
-    summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
+    summary::-webkit-details-marker { display: none; }
+    .left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
     .idx {
       width: 22px;
       height: 22px;
+      flex: none;
       border-radius: 999px;
       display: grid;
       place-items: center;
-      font-size: 12px;
-      font-weight: 700;
       color: var(--accent);
       background: var(--accent-soft);
-      flex: none;
+      font-size: 12px;
+      font-weight: 700;
     }
 
-    .title {
-      font-size: 15px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .title { overflow: hidden; font-size: 15px; white-space: nowrap; text-overflow: ellipsis; }
 
     .arrow {
       width: 8px;
       height: 8px;
+      flex: none;
+      margin-right: 4px;
       border-right: 2px solid #9a8e81;
       border-bottom: 2px solid #9a8e81;
       transform: rotate(45deg);
       transition: transform 0.2s ease;
-      margin-right: 4px;
-      flex: none;
     }
 
-    details[open] .arrow {
-      transform: rotate(225deg);
-      margin-top: 4px;
-    }
+    details[open] .arrow { margin-top: 4px; transform: rotate(225deg); }
 
     .detail {
       padding: 0 14px 14px 46px;
       color: #463f38;
       font-size: 15px;
       line-height: 1.5;
+      overflow-wrap: anywhere;
       animation: reveal 0.25s ease;
     }
 
-    @keyframes reveal {
-      from {
-        opacity: 0;
-        transform: translateY(-3px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .wish-name { margin: 0; white-space: pre-wrap; }
+    .wish-note { margin: 6px 0 0; color: var(--muted); font-size: 13px; white-space: pre-wrap; }
+    .wish-link { display: inline-block; margin-top: 7px; color: var(--accent); font-size: 13px; }
+
+    .delete-button {
+      width: 26px;
+      height: 26px;
+      margin: 8px 0 0 -5px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      color: #9a8e81;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
     }
 
-    .foot {
-      padding: 0 18px 16px;
-      font-size: 12px;
-      color: #8b7d6f;
-      text-align: center;
+    .delete-button:hover { color: var(--accent); background: var(--accent-soft); }
+    .empty { padding: 22px 12px; color: var(--muted); text-align: center; font-size: 14px; }
+
+    dialog {
+      width: min(calc(100% - 32px), 420px);
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: var(--text);
+      background: var(--card);
+      box-shadow: 0 18px 55px rgba(41, 32, 20, 0.2);
+    }
+
+    dialog::backdrop { background: rgba(43, 41, 38, .32); }
+    .dialog-head { padding: 18px 20px; border-bottom: 1px dashed var(--line); }
+    .dialog-head h2 { margin: 0; font-size: 18px; }
+    .dialog-form { display: grid; gap: 10px; padding: 18px 20px 20px; }
+    .dialog-form input, .dialog-form textarea {
+      width: 100%;
+      min-width: 0;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+    }
+
+    .dialog-form input:focus, .dialog-form textarea:focus { border-color: #d99072; }
+    .dialog-form textarea { min-height: 74px; resize: vertical; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    .dialog-actions button { min-height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #fff; }
+    .dialog-actions .save { border-color: var(--accent); color: #fff; background: var(--accent); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      max-width: calc(100% - 32px);
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: #fff;
+      background: #463f38;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 8px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast[hidden] { display: none; }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(-3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 14px; }
+      h1 { font-size: 23px; }
+      .head { padding: 16px; }
+      .list { padding: 9px; gap: 8px; }
     }
   </style>
 </head>
@@ -170,87 +231,224 @@
   <main class="panel">
     <header class="head">
       <h1>愿望清单</h1>
+      <div class="actions" id="actions">
+        <button class="icon-button" id="addButton" type="button" aria-label="添加愿望" title="添加愿望" disabled>+</button>
+        <button class="icon-button share" id="shareButton" type="button" aria-label="分享清单" title="分享清单" disabled>↗</button>
+      </div>
     </header>
-
-    <section class="list">
-      <details>
-        <summary>
-          <span class="left">
-            <span class="idx">1</span>
-            <span class="title">愿望 1</span>
-          </span>
-          <span class="arrow"></span>
-        </summary>
-        <div class="detail">Yeelight Tube 屏幕挂灯</div>
-      </details>
-
-      <details>
-        <summary>
-          <span class="left">
-            <span class="idx">2</span>
-            <span class="title">愿望 2</span>
-          </span>
-          <span class="arrow"></span>
-        </summary>
-        <div class="detail">无</div>
-      </details>
-
-      <details>
-        <summary>
-          <span class="left">
-            <span class="idx">3</span>
-            <span class="title">愿望 3</span>
-          </span>
-          <span class="arrow"></span>
-        </summary>
-        <div class="detail">无</div>
-      </details>
-
-      <details>
-        <summary>
-          <span class="left">
-            <span class="idx">4</span>
-            <span class="title">愿望 4</span>
-          </span>
-          <span class="arrow"></span>
-        </summary>
-        <div class="detail">无</div>
-      </details>
-
-      <details>
-        <summary>
-          <span class="left">
-            <span class="idx">5</span>
-            <span class="title">愿望 5</span>
-          </span>
-          <span class="arrow"></span>
-        </summary>
-        <div class="detail">无</div>
-      </details>
-
-      <details>
-        <summary>
-          <span class="left">
-            <span class="idx">6</span>
-            <span class="title">愿望 6</span>
-          </span>
-          <span class="arrow"></span>
-        </summary>
-        <div class="detail">无</div>
-      </details>
-
-      <details>
-        <summary>
-          <span class="left">
-            <span class="idx">7</span>
-            <span class="title">愿望 7</span>
-          </span>
-          <span class="arrow"></span>
-        </summary>
-        <div class="detail">无</div>
-      </details>
-    </section>
-
+    <section class="list" id="wishList" aria-label="愿望列表"></section>
   </main>
+
+  <dialog id="wishDialog">
+    <header class="dialog-head"><h2>添加愿望</h2></header>
+    <form class="dialog-form" id="wishForm">
+      <input id="wishName" name="name" maxlength="120" placeholder="愿望名称" aria-label="愿望名称" required />
+      <input id="wishUrl" name="url" type="url" maxlength="1000" placeholder="商品链接" aria-label="商品链接" />
+      <textarea id="wishNote" name="note" maxlength="1000" placeholder="备注" aria-label="备注"></textarea>
+      <div class="dialog-actions">
+        <button id="cancelButton" type="button">取消</button>
+        <button class="save" id="saveButton" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    (() => {
+      const config = window.FIREBASE_CONFIG;
+      const params = new URLSearchParams(location.search);
+      const readonly = params.get('view') === '1';
+      let listId = params.get('id');
+      let listRef;
+      let connected = false;
+      let wishes = {};
+      let toastTimer;
+
+      const list = document.getElementById('wishList');
+      const dialog = document.getElementById('wishDialog');
+      const form = document.getElementById('wishForm');
+      const addButton = document.getElementById('addButton');
+      const shareButton = document.getElementById('shareButton');
+      const toast = document.getElementById('toast');
+
+      if (!listId) {
+        listId = crypto.randomUUID().replaceAll('-', '');
+        params.set('id', listId);
+        history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+      }
+
+      if (readonly) document.getElementById('actions').hidden = true;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.hidden = false;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => { toast.hidden = true; }, 200);
+        }, 2200);
+      }
+
+      function updateControls() {
+        addButton.disabled = readonly || !connected;
+        shareButton.disabled = !connected;
+      }
+
+      function render() {
+        list.replaceChildren();
+        const entries = Object.entries(wishes).sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0));
+        if (!entries.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = '';
+          list.append(empty);
+          return;
+        }
+
+        entries.forEach(([key, wish], index) => {
+          const item = document.createElement('details');
+          const summary = document.createElement('summary');
+          const left = document.createElement('span');
+          left.className = 'left';
+          const number = document.createElement('span');
+          number.className = 'idx';
+          number.textContent = String(index + 1);
+          const title = document.createElement('span');
+          title.className = 'title';
+          title.textContent = `愿望 ${index + 1}`;
+          left.append(number, title);
+          const arrow = document.createElement('span');
+          arrow.className = 'arrow';
+          summary.append(left, arrow);
+
+          const detail = document.createElement('div');
+          detail.className = 'detail';
+          const name = document.createElement('p');
+          name.className = 'wish-name';
+          name.textContent = wish.name || '未命名愿望';
+          detail.append(name);
+          if (wish.note) {
+            const note = document.createElement('p');
+            note.className = 'wish-note';
+            note.textContent = wish.note;
+            detail.append(note);
+          }
+          if (wish.url) {
+            const link = document.createElement('a');
+            link.className = 'wish-link';
+            link.href = wish.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = '查看链接';
+            detail.append(link);
+          }
+          if (!readonly) {
+            const remove = document.createElement('button');
+            remove.className = 'delete-button';
+            remove.type = 'button';
+            remove.title = '删除愿望';
+            remove.setAttribute('aria-label', `删除愿望 ${index + 1}`);
+            remove.textContent = '×';
+            remove.addEventListener('click', async () => {
+              try {
+                await listRef.child(`items/${key}`).remove();
+              } catch (error) {
+                showToast('删除失败');
+              }
+            });
+            detail.append(remove);
+          }
+          item.append(summary, detail);
+          list.append(item);
+        });
+      }
+
+      function validConfig(value) {
+        return value && value.apiKey && value.projectId && value.databaseURL && !value.apiKey.startsWith('REPLACE_') && !value.databaseURL.startsWith('REPLACE_');
+      }
+
+      if (!window.firebase || !validConfig(config)) {
+        showToast('Firebase 配置不完整');
+        render();
+        return;
+      }
+
+      try {
+        firebase.initializeApp(config);
+        const database = firebase.database();
+        listRef = database.ref(`wishlists/${listId}`);
+        database.ref('.info/connected').on('value', snapshot => {
+          connected = snapshot.val() === true;
+          updateControls();
+        });
+
+        const seedId = listRef.child('items').push().key;
+        listRef.transaction(current => current || {
+          items: {
+            [seedId]: { name: 'Yeelight Tube 屏幕挂灯', note: '', url: '', createdAt: Date.now() }
+          }
+        }, error => {
+          if (error) showToast('清单读取失败，请检查数据库权限');
+        }, false);
+
+        listRef.on('value', snapshot => {
+          wishes = (snapshot.val() && snapshot.val().items) || {};
+          render();
+        }, () => showToast('清单读取失败'));
+      } catch (error) {
+        showToast('Firebase 配置无效');
+        render();
+      }
+
+      addButton.addEventListener('click', () => {
+        form.reset();
+        dialog.showModal();
+        document.getElementById('wishName').focus();
+      });
+
+      document.getElementById('cancelButton').addEventListener('click', () => dialog.close());
+      dialog.addEventListener('click', event => {
+        if (event.target === dialog) dialog.close();
+      });
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!connected || readonly) return;
+        const name = document.getElementById('wishName').value.trim();
+        const note = document.getElementById('wishNote').value.trim();
+        const url = document.getElementById('wishUrl').value.trim();
+        if (!name) return;
+        const saveButton = document.getElementById('saveButton');
+        saveButton.disabled = true;
+        try {
+          await listRef.child('items').push({ name, note, url, createdAt: Date.now() });
+          dialog.close();
+          form.reset();
+        } catch (error) {
+          showToast('保存失败，请检查网络或数据库权限');
+        } finally {
+          saveButton.disabled = false;
+        }
+      });
+
+      shareButton.addEventListener('click', async () => {
+        const shareUrl = new URL(location.href);
+        shareUrl.searchParams.set('id', listId);
+        shareUrl.searchParams.set('view', '1');
+        try {
+          await navigator.clipboard.writeText(shareUrl.toString());
+          showToast('分享链接已复制');
+        } catch (error) {
+          window.prompt('复制清单链接：', shareUrl.toString());
+        }
+      });
+
+      updateControls();
+    })();
+  </script>
 </body>
 </html>
