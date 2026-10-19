@@ -400,7 +400,7 @@
       document.getElementById('copyKeyButton').addEventListener('click', async () => {
         try {
           await navigator.clipboard.writeText(document.getElementById('generatedKey').value);
-          setStatus('密钥已复制，请单独发给朋友');
+          setStatus('密钥已复制');
         } catch (error) {
           document.getElementById('generatedKey').select();
           setStatus('已选中密钥，请复制');
