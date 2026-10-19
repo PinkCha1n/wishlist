@@ -347,9 +347,10 @@
         firebase.initializeApp(config);
         firebase.database().ref('.info/connected').on('value', snapshot => {
           connected = snapshot.val() === true;
-          if (!roomView.hidden) addButton.disabled = !connected;
-          if (!connected) setStatus('连接中断，正在重试…');
-          else if (!roomView.hidden) setStatus('已解锁，愿望会实时同步');
+          if (!roomView.hidden) {
+            addButton.disabled = !connected;
+            setStatus(connected ? '已解锁，愿望会实时同步' : '');
+          }
         });
       } catch (error) {
         keyView.hidden = true;
