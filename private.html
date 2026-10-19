@@ -39,8 +39,21 @@
       background: var(--card);
       box-shadow: 0 14px 36px #29201417;
     }
-    header { padding: 20px; border-bottom: 1px dashed var(--line); background: linear-gradient(135deg, #fff8ef, #fffdfa); }
+    header { padding: 20px; border-bottom: 1px dashed var(--line); background: linear-gradient(135deg, #fff8ef, #fffdfa); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     h1 { margin: 0; font-size: 22px; }
+    .new-room {
+      width: 38px;
+      height: 38px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      color: var(--accent);
+      background: transparent;
+    }
+    .new-room:hover { background: var(--accent-soft); }
+    .new-room svg { width: 19px; height: 19px; }
     .status { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
     .content { padding: 18px; }
     .form { display: grid; gap: 10px; }
@@ -97,17 +110,16 @@
   <main class="panel">
     <header>
       <h1>私密愿望清单</h1>
-      <p class="status" id="status">创建一份只有持有密钥的人能打开的清单。</p>
+      <button class="new-room" id="createButton" type="button" aria-label="生成新密钥和愿望清单" title="生成新密钥和愿望清单">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3"/></svg>
+      </button>
     </header>
     <section class="content">
-      <div id="createView" class="form">
-        <button class="button" id="createButton" type="button">生成随机密钥和清单</button>
-      </div>
-
-      <div id="keyView" class="form" hidden>
-        <label for="keyInput" id="keyLabel">粘贴朋友发来的密钥</label>
+      <p class="status" id="status">输入密钥即可打开对应清单；右上角锁形按钮可生成新密钥。</p>
+      <div id="keyView" class="form">
+        <label for="keyInput" id="keyLabel">愿望清单密钥</label>
         <input id="keyInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="密钥区分大小写" />
-        <button class="button" id="unlockButton" type="button">解锁清单</button>
+        <button class="button" id="unlockButton" type="button">打开清单</button>
       </div>
 
       <section id="roomView" hidden>
@@ -117,7 +129,6 @@
             <input id="generatedKey" readonly aria-label="新生成的密钥" />
             <button class="button secondary" id="copyKeyButton" type="button">复制密钥</button>
           </div>
-          <button class="button secondary" id="copyLinkButton" type="button">复制清单地址</button>
         </div>
         <form class="form" id="wishForm">
           <input id="wishName" maxlength="120" placeholder="愿望名称" aria-label="愿望名称" required />
@@ -137,14 +148,16 @@
     (() => {
       const config = window.FIREBASE_CONFIG;
       const query = new URLSearchParams(location.search);
-      let roomId = query.get('room');
+      const legacyRoomId = query.get('room');
+      let roomId;
       let roomRef;
+      let activeItemsRef;
+      let activeItemsListener;
       let cryptoKey;
       let connected = false;
       let entries = {};
 
       const status = document.getElementById('status');
-      const createView = document.getElementById('createView');
       const keyView = document.getElementById('keyView');
       const roomView = document.getElementById('roomView');
       const generatedKeyBox = document.getElementById('generatedKeyBox');
@@ -194,6 +207,13 @@
         }
         if (bytes.length !== 16) throw new Error('invalid-key-format');
         return crypto.subtle.importKey('raw', bytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+      }
+
+      async function roomIdForKey(rawKey) {
+        const bytes = fromBase64Url(rawKey.trim());
+        if (bytes.length !== 16) throw new Error('invalid-key-format');
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return toBase64Url(new Uint8Array(digest));
       }
 
       function setStatus(message, isError = false) {
@@ -258,8 +278,30 @@
 
       async function openRoom(rawKey, generated = false) {
         cryptoKey = await importKey(rawKey);
+        roomId = await roomIdForKey(rawKey);
         roomRef = firebase.database().ref(`privateWishlists/${roomId}`);
-        const snapshot = await roomRef.child('meta').once('value');
+        let snapshot = await roomRef.child('meta').once('value');
+
+        if (!snapshot.exists() && legacyRoomId) {
+          const legacyRef = firebase.database().ref(`privateWishlists/${legacyRoomId}`);
+          const legacyMetaSnapshot = await legacyRef.child('meta').once('value');
+          if (legacyMetaSnapshot.exists()) {
+            let legacyMeta;
+            try {
+              legacyMeta = await decrypt(legacyMetaSnapshot.val());
+            } catch (error) {
+              throw new Error('wrong-key');
+            }
+            if (legacyMeta.room !== legacyRoomId || legacyMeta.marker !== 'private-wishlist-v1') {
+              throw new Error('wrong-key');
+            }
+            const legacyItems = (await legacyRef.child('items').once('value')).val() || {};
+            if (Object.keys(legacyItems).length) await roomRef.child('items').set(legacyItems);
+            await roomRef.child('meta').set(await encrypt({ room: roomId, marker: 'private-wishlist-v1' }));
+            snapshot = await roomRef.child('meta').once('value');
+          }
+        }
+
         if (!snapshot.exists()) throw new Error('missing-room');
         let meta;
         try {
@@ -269,15 +311,19 @@
         }
         if (meta.room !== roomId || meta.marker !== 'private-wishlist-v1') throw new Error('wrong-key');
 
-        createView.hidden = true;
         keyView.hidden = true;
         roomView.hidden = false;
         generatedKeyBox.hidden = !generated;
         addButton.disabled = !connected;
         if (generated) document.getElementById('generatedKey').value = rawKey;
+        if (legacyRoomId) history.replaceState(null, '', location.pathname);
         setStatus('已解锁，愿望会实时同步');
 
-        roomRef.child('items').on('value', async snapshotValue => {
+        if (activeItemsRef && activeItemsListener) activeItemsRef.off('value', activeItemsListener);
+        entries = {};
+        render();
+        activeItemsRef = roomRef.child('items');
+        activeItemsListener = async snapshotValue => {
           const values = snapshotValue.val() || {};
           const decrypted = {};
           try {
@@ -289,11 +335,11 @@
           } catch (error) {
             setStatus('部分内容无法解密，数据可能已损坏', true);
           }
-        }, () => setStatus('读取失败，请检查数据库权限', true));
+        };
+        activeItemsRef.on('value', activeItemsListener, () => setStatus('读取失败，请检查数据库权限', true));
       }
 
       if (!window.firebase || !config || !config.apiKey || !config.databaseURL) {
-        createView.hidden = true;
         keyView.hidden = true;
         setStatus('Firebase 配置不可用', true);
         return;
@@ -308,53 +354,51 @@
           else if (!roomView.hidden) setStatus('已解锁，愿望会实时同步');
         });
       } catch (error) {
-        createView.hidden = true;
         keyView.hidden = true;
         setStatus('Firebase 初始化失败', true);
         return;
       }
 
-      if (roomId) {
-        createView.hidden = true;
-        keyView.hidden = false;
-        const unlockButton = document.getElementById('unlockButton');
-        async function unlock() {
-          unlockButton.disabled = true;
-          try {
-            await openRoom(keyInput.value);
-          } catch (error) {
-            if (error.message === 'invalid-key-format') setStatus('密钥格式不正确，请粘贴完整密钥', true);
-            else if (error.message === 'wrong-key') setStatus('密钥与这个房间不匹配，请确认两者来自同一份清单', true);
-            else if (error.message === 'missing-room') setStatus('找不到这份清单，请检查房间地址', true);
-            else setStatus('读取失败，请检查网络和 Firebase 数据库读取权限', true);
-          } finally {
-            unlockButton.disabled = false;
-          }
+      const unlockButton = document.getElementById('unlockButton');
+      async function unlock() {
+        unlockButton.disabled = true;
+        try {
+          await openRoom(keyInput.value);
+        } catch (error) {
+          if (error.message === 'invalid-key-format') setStatus('密钥格式不正确，请粘贴完整密钥', true);
+          else if (error.message === 'wrong-key') setStatus('密钥不正确', true);
+          else if (error.message === 'missing-room') setStatus('没有找到该密钥对应的清单', true);
+          else setStatus('读取失败，请检查网络和 Firebase 数据库读取权限', true);
+        } finally {
+          unlockButton.disabled = false;
         }
-        unlockButton.addEventListener('click', unlock);
-        keyInput.addEventListener('keydown', event => {
-          if (event.key === 'Enter') unlock();
-        });
-        keyInput.focus();
-      } else {
-        document.getElementById('createButton').addEventListener('click', async event => {
-          const button = event.currentTarget;
-          button.disabled = true;
-          try {
-            roomId = token(16);
-            const key = token(16);
-            cryptoKey = await importKey(key);
-            roomRef = firebase.database().ref(`privateWishlists/${roomId}`);
-            await roomRef.child('meta').set(await encrypt({ room: roomId, marker: 'private-wishlist-v1' }));
-            query.set('room', roomId);
-            history.replaceState(null, '', `${location.pathname}?${query.toString()}`);
-            await openRoom(key, true);
-          } catch (error) {
-            setStatus('创建失败，请检查网络和数据库权限', true);
-            button.disabled = false;
-          }
-        });
       }
+      unlockButton.addEventListener('click', unlock);
+      keyInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') unlock();
+      });
+      keyInput.focus();
+
+      document.getElementById('createButton').addEventListener('click', async event => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        keyView.hidden = true;
+        roomView.hidden = true;
+        try {
+          const key = token(16);
+          cryptoKey = await importKey(key);
+          roomId = await roomIdForKey(key);
+          roomRef = firebase.database().ref(`privateWishlists/${roomId}`);
+          const existing = await roomRef.child('meta').once('value');
+          if (existing.exists()) throw new Error('key-collision');
+          await roomRef.child('meta').set(await encrypt({ room: roomId, marker: 'private-wishlist-v1' }));
+          await openRoom(key, true);
+        } catch (error) {
+          setStatus('创建失败，请检查网络和数据库权限后重试', true);
+          keyView.hidden = false;
+          button.disabled = false;
+        }
+      });
 
       document.getElementById('copyKeyButton').addEventListener('click', async () => {
         try {
@@ -363,17 +407,6 @@
         } catch (error) {
           document.getElementById('generatedKey').select();
           setStatus('已选中密钥，请复制');
-        }
-      });
-
-      document.getElementById('copyLinkButton').addEventListener('click', async () => {
-        const roomUrl = new URL(location.href);
-        roomUrl.search = `?room=${encodeURIComponent(roomId)}`;
-        try {
-          await navigator.clipboard.writeText(roomUrl.toString());
-          setStatus('清单地址已复制，请把密钥单独发给朋友');
-        } catch (error) {
-          window.prompt('清单地址：', roomUrl.toString());
         }
       });
 
