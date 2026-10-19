@@ -81,6 +81,7 @@
     .button.secondary { color: var(--accent); background: #fff; }
     .button:disabled { cursor: default; opacity: .5; }
     .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .room-back { margin-bottom: 12px; }
     .key-box { display: grid; gap: 8px; margin: 0 0 16px; }
     .key-row { display: flex; gap: 8px; }
     .key-row input { font-family: ui-monospace, Consolas, monospace; }
@@ -120,6 +121,9 @@
       </div>
 
       <section id="roomView" hidden>
+        <div class="room-back">
+          <button class="button secondary" id="backButton" type="button">返回输入密钥</button>
+        </div>
         <div class="key-box" id="generatedKeyBox" hidden>
           <div class="key-row">
             <input id="generatedKey" readonly aria-label="新生成的密钥" />
@@ -405,6 +409,20 @@
           document.getElementById('generatedKey').select();
           setStatus('已选中密钥，请复制');
         }
+      });
+
+      document.getElementById('backButton').addEventListener('click', () => {
+        if (!generatedKeyBox.hidden) keyInput.value = document.getElementById('generatedKey').value;
+        if (activeItemsRef && activeItemsListener) activeItemsRef.off('value', activeItemsListener);
+        activeItemsRef = null;
+        activeItemsListener = null;
+        entries = {};
+        render();
+        roomView.hidden = true;
+        keyView.hidden = false;
+        generatedKeyBox.hidden = true;
+        setStatus('');
+        keyInput.focus();
       });
 
       document.getElementById('wishForm').addEventListener('submit', async event => {
