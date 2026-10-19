@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>私密愿望清单</title>
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --card: #fffdf9;
+      --text: #2b2926;
+      --muted: #7a7065;
+      --line: #e7dfd3;
+      --accent: #ca5a2e;
+      --accent-soft: #fce6dc;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 18px;
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      background: radial-gradient(1000px 600px at 100% -10%, #fff6dc 0%, transparent 60%), var(--bg);
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .panel {
+      width: min(100%, 460px);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--card);
+      box-shadow: 0 14px 36px #29201417;
+    }
+    header { padding: 20px; border-bottom: 1px dashed var(--line); background: linear-gradient(135deg, #fff8ef, #fffdfa); }
+    h1 { margin: 0; font-size: 22px; }
+    .status { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .content { padding: 18px; }
+    .form { display: grid; gap: 10px; }
+    input, textarea {
+      width: 100%;
+      min-width: 0;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+    }
+    input:focus, textarea:focus { border-color: #d99072; }
+    textarea { min-height: 74px; resize: vertical; }
+    .button {
+      min-height: 42px;
+      padding: 0 15px;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      color: #fff;
+      background: var(--accent);
+      font-weight: 650;
+    }
+    .button.secondary { color: var(--accent); background: #fff; }
+    .button:disabled { cursor: default; opacity: .5; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .key-box { display: grid; gap: 8px; margin: 0 0 16px; }
+    .key-box label { color: var(--muted); font-size: 13px; }
+    .key-row { display: flex; gap: 8px; }
+    .key-row input { font-family: ui-monospace, Consolas, monospace; }
+    .key-row button { flex: none; }
+    .list { display: grid; gap: 8px; margin-top: 14px; }
+    details { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+    summary { min-height: 48px; padding: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    .left { min-width: 0; display: flex; align-items: center; gap: 10px; }
+    .number { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--accent); background: var(--accent-soft); font-size: 12px; font-weight: 700; }
+    .title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 15px; }
+    .arrow { width: 8px; height: 8px; flex: none; margin-right: 4px; border-right: 2px solid #9a8e81; border-bottom: 2px solid #9a8e81; transform: rotate(45deg); }
+    details[open] .arrow { transform: rotate(225deg); }
+    .detail { padding: 0 14px 14px 45px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+    .wish-note { margin: 6px 0 0; color: var(--muted); white-space: pre-wrap; }
+    .delete { margin-top: 8px; padding: 4px 8px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; }
+    .delete:hover { color: var(--accent); background: var(--accent-soft); }
+    .empty { padding: 16px; color: var(--muted); text-align: center; font-size: 14px; }
+    .back { display: inline-block; margin-top: 14px; color: var(--muted); font-size: 13px; text-decoration: none; }
+    .back:hover { color: var(--accent); }
+    [hidden] { display: none !important; }
+    @media (max-width: 480px) { body { padding: 12px; } header { padding: 17px; } .content { padding: 14px; } }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <header>
+      <h1>私密愿望清单</h1>
+      <p class="status" id="status">创建一份只有持有密钥的人能打开的清单。</p>
+    </header>
+    <section class="content">
+      <div id="createView" class="form">
+        <button class="button" id="createButton" type="button">生成随机密钥和清单</button>
+      </div>
+
+      <div id="keyView" class="form" hidden>
+        <label for="keyInput" id="keyLabel">输入朋友发给你的密钥</label>
+        <input id="keyInput" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴密钥" />
+        <button class="button" id="unlockButton" type="button">解锁清单</button>
+      </div>
+
+      <section id="roomView" hidden>
+        <div class="key-box" id="generatedKeyBox" hidden>
+          <label for="generatedKey">新密钥只显示在这里，请单独发给朋友</label>
+          <div class="key-row">
+            <input id="generatedKey" readonly aria-label="新生成的密钥" />
+            <button class="button secondary" id="copyKeyButton" type="button">复制密钥</button>
+          </div>
+          <button class="button secondary" id="copyLinkButton" type="button">复制清单地址</button>
+        </div>
+        <form class="form" id="wishForm">
+          <input id="wishName" maxlength="120" placeholder="愿望名称" aria-label="愿望名称" required />
+          <textarea id="wishNote" maxlength="1000" placeholder="备注（可选）" aria-label="备注"></textarea>
+          <button class="button" id="addButton" type="submit">添加愿望</button>
+        </form>
+        <div class="list" id="wishList"></div>
+      </section>
+      <a class="back" href="./">返回愿望清单</a>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    (() => {
+      const config = window.FIREBASE_CONFIG;
+      const query = new URLSearchParams(location.search);
+      let roomId = query.get('room');
+      let roomRef;
+      let cryptoKey;
+      let connected = false;
+      let entries = {};
+
+      const status = document.getElementById('status');
+      const createView = document.getElementById('createView');
+      const keyView = document.getElementById('keyView');
+      const roomView = document.getElementById('roomView');
+      const generatedKeyBox = document.getElementById('generatedKeyBox');
+      const keyInput = document.getElementById('keyInput');
+      const wishList = document.getElementById('wishList');
+      const addButton = document.getElementById('addButton');
+
+      function token(byteLength) {
+        const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
+        return toBase64Url(bytes);
+      }
+
+      function toBase64Url(bytes) {
+        let binary = '';
+        for (const byte of bytes) binary += String.fromCharCode(byte);
+        return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/g, '');
+      }
+
+      function fromBase64Url(value) {
+        const base64 = value.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - value.length % 4) % 4);
+        const binary = atob(base64);
+        return Uint8Array.from(binary, char => char.charCodeAt(0));
+      }
+
+      async function encrypt(value) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const plain = new TextEncoder().encode(JSON.stringify(value));
+        const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, plain));
+        const combined = new Uint8Array(iv.length + cipher.length);
+        combined.set(iv);
+        combined.set(cipher, iv.length);
+        return toBase64Url(combined);
+      }
+
+      async function decrypt(value) {
+        const bytes = fromBase64Url(value);
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, cryptoKey, bytes.slice(12));
+        return JSON.parse(new TextDecoder().decode(plain));
+      }
+
+      async function importKey(rawKey) {
+        const bytes = fromBase64Url(rawKey.trim());
+        if (bytes.length !== 16) throw new Error('invalid-key');
+        return crypto.subtle.importKey('raw', bytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+      }
+
+      function setStatus(message, isError = false) {
+        status.textContent = message;
+        status.style.color = isError ? '#b84832' : '';
+      }
+
+      function render() {
+        wishList.replaceChildren();
+        const sorted = Object.entries(entries).sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0));
+        if (!sorted.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = '清单还是空的';
+          wishList.append(empty);
+          return;
+        }
+
+        sorted.forEach(([id, item], index) => {
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          const left = document.createElement('span');
+          left.className = 'left';
+          const number = document.createElement('span');
+          number.className = 'number';
+          number.textContent = String(index + 1);
+          const title = document.createElement('span');
+          title.className = 'title';
+          title.textContent = `愿望 ${index + 1}`;
+          left.append(number, title);
+          const arrow = document.createElement('span');
+          arrow.className = 'arrow';
+          summary.append(left, arrow);
+
+          const detail = document.createElement('div');
+          detail.className = 'detail';
+          const name = document.createElement('div');
+          name.textContent = item.name || '';
+          detail.append(name);
+          if (item.note) {
+            const note = document.createElement('p');
+            note.className = 'wish-note';
+            note.textContent = item.note;
+            detail.append(note);
+          }
+          const remove = document.createElement('button');
+          remove.className = 'delete';
+          remove.type = 'button';
+          remove.textContent = '删除';
+          remove.addEventListener('click', async () => {
+            try {
+              await roomRef.child(`items/${id}`).remove();
+            } catch (error) {
+              setStatus('删除失败，请检查网络', true);
+            }
+          });
+          detail.append(remove);
+          details.append(summary, detail);
+          wishList.append(details);
+        });
+      }
+
+      async function openRoom(rawKey, generated = false) {
+        cryptoKey = await importKey(rawKey);
+        roomRef = firebase.database().ref(`privateWishlists/${roomId}`);
+        const snapshot = await roomRef.child('meta').once('value');
+        if (!snapshot.exists()) throw new Error('missing-room');
+        const meta = await decrypt(snapshot.val());
+        if (meta.room !== roomId || meta.marker !== 'private-wishlist-v1') throw new Error('wrong-key');
+
+        createView.hidden = true;
+        keyView.hidden = true;
+        roomView.hidden = false;
+        generatedKeyBox.hidden = !generated;
+        addButton.disabled = !connected;
+        if (generated) document.getElementById('generatedKey').value = rawKey;
+        setStatus('已解锁，愿望会实时同步');
+
+        roomRef.child('items').on('value', async snapshotValue => {
+          const values = snapshotValue.val() || {};
+          const decrypted = {};
+          try {
+            await Promise.all(Object.entries(values).map(async ([id, cipher]) => {
+              decrypted[id] = await decrypt(cipher);
+            }));
+            entries = decrypted;
+            render();
+          } catch (error) {
+            setStatus('部分内容无法解密，数据可能已损坏', true);
+          }
+        }, () => setStatus('读取失败，请检查数据库权限', true));
+      }
+
+      if (!window.firebase || !config || !config.apiKey || !config.databaseURL) {
+        createView.hidden = true;
+        keyView.hidden = true;
+        setStatus('Firebase 配置不可用', true);
+        return;
+      }
+
+      try {
+        firebase.initializeApp(config);
+        firebase.database().ref('.info/connected').on('value', snapshot => {
+          connected = snapshot.val() === true;
+          if (!roomView.hidden) addButton.disabled = !connected;
+          if (!connected) setStatus('连接中断，正在重试…');
+          else if (!roomView.hidden) setStatus('已解锁，愿望会实时同步');
+        });
+      } catch (error) {
+        createView.hidden = true;
+        keyView.hidden = true;
+        setStatus('Firebase 初始化失败', true);
+        return;
+      }
+
+      if (roomId) {
+        createView.hidden = true;
+        keyView.hidden = false;
+        document.getElementById('unlockButton').addEventListener('click', async () => {
+          const button = document.getElementById('unlockButton');
+          button.disabled = true;
+          try {
+            await openRoom(keyInput.value);
+          } catch (error) {
+            setStatus('密钥无效或清单不存在', true);
+          } finally {
+            button.disabled = false;
+          }
+        });
+      } else {
+        document.getElementById('createButton').addEventListener('click', async event => {
+          const button = event.currentTarget;
+          button.disabled = true;
+          try {
+            roomId = token(16);
+            const key = token(16);
+            cryptoKey = await importKey(key);
+            roomRef = firebase.database().ref(`privateWishlists/${roomId}`);
+            await roomRef.child('meta').set(await encrypt({ room: roomId, marker: 'private-wishlist-v1' }));
+            query.set('room', roomId);
+            history.replaceState(null, '', `${location.pathname}?${query.toString()}`);
+            await openRoom(key, true);
+          } catch (error) {
+            setStatus('创建失败，请检查网络和数据库权限', true);
+            button.disabled = false;
+          }
+        });
+      }
+
+      document.getElementById('copyKeyButton').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(document.getElementById('generatedKey').value);
+          setStatus('密钥已复制，请单独发给朋友');
+        } catch (error) {
+          document.getElementById('generatedKey').select();
+          setStatus('已选中密钥，请复制');
+        }
+      });
+
+      document.getElementById('copyLinkButton').addEventListener('click', async () => {
+        const roomUrl = new URL(location.href);
+        roomUrl.search = `?room=${encodeURIComponent(roomId)}`;
+        try {
+          await navigator.clipboard.writeText(roomUrl.toString());
+          setStatus('清单地址已复制，请把密钥单独发给朋友');
+        } catch (error) {
+          window.prompt('清单地址：', roomUrl.toString());
+        }
+      });
+
+      document.getElementById('wishForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!connected || !cryptoKey) return;
+        const name = document.getElementById('wishName').value.trim();
+        const note = document.getElementById('wishNote').value.trim();
+        if (!name) return;
+        addButton.disabled = true;
+        try {
+          const encrypted = await encrypt({ name, note, createdAt: Date.now() });
+          await roomRef.child('items').push(encrypted);
+          event.currentTarget.reset();
+          document.getElementById('wishName').focus();
+        } catch (error) {
+          setStatus('保存失败，请检查网络', true);
+        } finally {
+          addButton.disabled = !connected;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

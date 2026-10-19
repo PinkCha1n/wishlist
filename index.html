@@ -74,6 +74,9 @@
 
     .icon-button:hover { background: var(--accent-soft); }
     .icon-button:disabled { cursor: default; opacity: .4; }
+    .private-link { color: var(--muted); }
+    .private-link:hover { color: var(--accent); }
+    .private-link svg { width: 18px; height: 18px; }
 
     .list { padding: 10px; display: grid; gap: 10px; }
 
@@ -229,6 +232,9 @@
     <header class="head">
       <h1>愿望清单</h1>
       <div class="actions" id="actions">
+        <a class="icon-button private-link" href="private.html" aria-label="私密清单" title="私密清单">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg>
+        </a>
         <button class="icon-button" id="addButton" type="button" aria-label="添加愿望" title="添加愿望" disabled>+</button>
       </div>
     </header>
