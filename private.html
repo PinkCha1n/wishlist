@@ -177,6 +177,7 @@
       const keyInput = document.getElementById('keyInput');
       const wishList = document.getElementById('wishList');
       const addButton = document.getElementById('addButton');
+      const createButton = document.getElementById('createButton');
 
       function token(byteLength) {
         const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
@@ -394,7 +395,7 @@
       });
       keyInput.focus();
 
-      document.getElementById('createButton').addEventListener('click', async event => {
+      createButton.addEventListener('click', async event => {
         const button = event.currentTarget;
         button.disabled = true;
         keyView.hidden = true;
@@ -435,6 +436,7 @@
         roomView.hidden = true;
         keyView.hidden = false;
         generatedKeyBox.hidden = true;
+        createButton.disabled = false;
         setStatus('');
         keyInput.focus();
       });
